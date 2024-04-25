@@ -23,13 +23,22 @@ namespace MauiAndroidSerialPortNative
 
         public static int InfiniteTimeout { get; set; } = 9999;
 
+
+        private const int TCSANOW = 0;
+        private const int TCSADRAIN = 1;
+        private const int TCSAFLUSH = 2;
+
+
         public SerialPort(string portName, BaudRate baudRate = BaudRate.B9600, Parity parity = Parity.None, DataBits dataBits = DataBits.CS8, StopBits stopBits = StopBits.One)
         {
             fd = Open(portName);
+
             if (NativeMethods.tcgetattr(fd, out Termios currentTermios) != 0)
             {
                 // 错误处理
             }
+
+            NativeMethods.MakeRaw(ref currentTermios);
 
             if (NativeMethods.cfsetispeed(ref currentTermios, (uint)baudRate) != 0 ||
                 NativeMethods.cfsetospeed(ref currentTermios, (uint)baudRate) != 0)
@@ -40,6 +49,12 @@ namespace MauiAndroidSerialPortNative
             SetParity(ref currentTermios, parity);
             SetCSTOP(ref currentTermios, stopBits);
             SetDateBits(ref currentTermios, (uint)dataBits);
+            if (NativeMethods.tcsetattr(fd, TCSANOW, ref currentTermios) != 0)
+            {
+                // 错误处理，例如记录错误或显示错误消息
+                Console.WriteLine("Error applying serial port settings.");
+            }
+
             //Task.Run(Update);
         }
 
@@ -129,7 +144,7 @@ namespace MauiAndroidSerialPortNative
         }
 
 
-        public event SerialDataReceivedEventHandler DataReceived;
+        public event SerialDataReceivedEventHandler? DataReceived;
 
         protected virtual void OnDataReceived(SerialDataReceivedEventArgs e)
         {
@@ -151,6 +166,9 @@ namespace MauiAndroidSerialPortNative
 
         private const uint PARENB = 0x0100; // 启用奇偶校验
         private const uint PARODD = 0x0200;
+
+
+        
 
         private void SetParity(ref Termios currentTermios, Parity parity)
         {

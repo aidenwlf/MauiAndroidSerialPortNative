@@ -1,4 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿using Android.Graphics.Drawables;
+using Java.Security;
+using JetBrains.Annotations;
+using System.Runtime.InteropServices;
 
 namespace MauiAndroidSerialPortNative
 {
@@ -53,6 +56,44 @@ namespace MauiAndroidSerialPortNative
             set.fds_bits0 = 0;
         }
 
+
+        // Control Flags
+        public const uint CSIZE = 0x0030;
+        public const uint CS8 = 0x0030;
+        public const uint PARENB = 0x0100;
+
+        // Input Flags
+        public const uint IXON = 0x0400;
+        public const uint IXOFF = 0x1000;
+        public const uint IXANY = 0x0800;
+        public const uint ICRNL = 0x0100;
+        public const uint INLCR = 0x0040;
+        public const uint IGNCR = 0x0002;
+
+        // Output Flags
+        public const uint OPOST = 0x0001;
+
+        // Local Flags
+        public const uint ECHO = 0x0008;
+        public const uint ECHONL = 0x0040;
+        public const uint ICANON = 0x0002;
+        public const uint ISIG = 0x0001;
+        public const uint IEXTEN = 0x8000;
+
+        public const int VTIME= 5;
+        public const int VMIN= 6;
+
+        public static void MakeRaw(ref Termios termios)
+        {
+            termios.c_iflag &= ~(IXON | IXOFF | IXANY | ICRNL | INLCR | IGNCR);
+            termios.c_oflag &= ~OPOST;
+            termios.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+            termios.c_cflag &= ~(CSIZE | PARENB);
+            termios.c_cflag |= CS8;
+            termios.c_cc[VMIN] = 1;
+            termios.c_cc[VTIME] = 0;
+        }
+
         public static bool FD_ISSET(int fd, ref Fd_set set)
         {
             return (set.fds_bits0 & ((ulong)1 << (fd % FD_SETSIZE))) != 0;
@@ -94,7 +135,5 @@ namespace MauiAndroidSerialPortNative
         public byte c_line;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
         public byte[] c_cc;
-        //public uint c_ispeed;
-        //public uint c_ospeed;
     }
 }
